@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Career Decision Support System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        .glass-card { background: white; border-radius: 1rem; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; }
+        input[type=range] { accent-color: #2563eb; }
+        #chatMessages::-webkit-scrollbar { width: 5px; }
+        #chatMessages::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .markdown-body ul { list-style-type: disc; padding-left: 1.2rem; margin: 0.5rem 0; }
+        .markdown-body strong { color: #1e40af; }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Project Header -->
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-extrabold text-slate-900 mb-2">
+                <i class="fas fa-graduation-cap text-blue-600 mr-2"></i>AI-Based Career Support System
+            </h1>
+            <div class="flex justify-center gap-3 text-xs font-bold uppercase tracking-widest text-slate-500">
+                <span>Machine Learning</span> <span>•</span> <span>Expert Systems</span> <span>•</span> <span>Explainable AI</span>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Left: Inputs -->
+            <div class="lg:col-span-5 glass-card p-6">
+                <h2 class="text-lg font-bold text-slate-800 mb-6 border-b pb-2">Aptitude Self-Assessment</h2>
+                <form id="predictForm" class="space-y-5">
+                    <script>
+                        const attrs = [
+                            { id: 'math', label: 'Mathematics', icon: 'fa-calculator' },
+                            { id: 'science', label: 'Science & Physics', icon: 'fa-microscope' },
+                            { id: 'art', label: 'Design & UI/UX', icon: 'fa-pen-nib' },
+                            { id: 'communication', label: 'Verbal/Written Comm', icon: 'fa-comment-alt' },
+                            { id: 'logic', label: 'Logical Reasoning', icon: 'fa-brain' },
+                            { id: 'coding', label: 'Coding/Tech Interest', icon: 'fa-code' },
+                            { id: 'speaking', label: 'Public Presentation', icon: 'fa-volume-up' },
+                            { id: 'management', label: 'Leadership/Organizing', icon: 'fa-tasks' }
+                        ];
+                        attrs.forEach(a => {
+                            document.write(`
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <label class="text-slate-600 font-medium"><i class="fas ${a.icon} mr-2 opacity-50"></i>${a.label}</label>
+                                        <span id="${a.id}Val" class="font-bold text-blue-600">5</span>
+                                    </div>
+                                    <input type="range" id="${a.id}" min="1" max="10" value="5" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer" oninput="document.getElementById('${a.id}Val').innerText=this.value">
+                                </div>
+                            `);
+                        });
+                    </script>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-lg transition">
+                        Run Career Prediction
+                    </button>
+                </form>
+            </div>
+
+            <!-- Right: Results & Chat -->
+            <div class="lg:col-span-7 flex flex-col gap-6">
+                <!-- Result Display -->
+                <div id="resultArea" class="glass-card p-6 hidden">
+                    <div class="flex flex-col md:flex-row items-center gap-6">
+                        <div class="bg-blue-50 p-4 rounded-full border-2 border-blue-100">
+                            <i class="fas fa-certificate text-4xl text-blue-600"></i>
+                        </div>
+                        <div class="text-center md:text-left">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Recommended Goal</p>
+                            <h2 id="careerTitle" class="text-3xl font-black text-slate-800">Career Name</h2>
+                            <p id="rationaleText" class="text-sm text-slate-500 mt-2 italic leading-relaxed"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chatbot -->
+                <div id="chatArea" class="glass-card flex flex-col h-[500px] overflow-hidden hidden">
+                    <div class="bg-slate-800 p-4 flex justify-between items-center text-white">
+                        <span class="text-sm font-bold"><i class="fas fa-robot mr-2"></i>Academic AI Mentor</span>
+                        <span class="text-[10px] bg-emerald-500 px-2 py-0.5 rounded-full uppercase">Offline Secure</span>
+                    </div>
+                    <div id="chatMessages" class="flex-grow p-4 overflow-y-auto bg-slate-50 space-y-4"></div>
+                    <div class="p-3 border-t bg-white flex gap-2">
+                        <input type="text" id="chatInput" placeholder="Ask about degrees, salary, or compare..." class="flex-grow border rounded-lg px-4 py-2 text-sm focus:outline-blue-500">
+                        <button onclick="sendChat()" class="bg-blue-600 text-white px-4 rounded-lg"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="glass-card flex-grow flex flex-col items-center justify-center p-10 text-center opacity-40">
+                    <i class="fas fa-microchip text-6xl mb-4"></i>
+                    <p class="font-medium">System Ready. Run prediction to activate AI Mentor.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentCareer = "";
+
+        document.getElementById('predictForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {};
+            attrs.forEach(a => payload[a.id] = document.getElementById(a.id).value);
+
+            const res = await fetch('/predict', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('resultArea').classList.remove('hidden');
+            document.getElementById('chatArea').classList.remove('hidden');
+
+            currentCareer = data.predicted_career;
+            document.getElementById('careerTitle').innerText = data.predicted_career;
+            document.getElementById('rationaleText').innerText = data.explanation;
+
+            document.getElementById('chatMessages').innerHTML = `<div class="bg-blue-100 text-blue-900 p-3 rounded-lg text-sm shadow-sm max-w-[90%]">
+                I've analyzed your profile for <b>${currentCareer}</b>. Do you want to know about the <b>salary</b>, <b>degrees</b>, or <b>compare</b> it with another field?
+            </div>`;
+        });
+
+        async function sendChat() {
+            const input = document.getElementById('chatInput');
+            const msg = input.value.trim();
+            if(!msg) return;
+
+            const box = document.getElementById('chatMessages');
+            box.innerHTML += `<div class="flex justify-end"><div class="bg-slate-800 text-white p-3 rounded-lg text-sm max-w-[90%]">${msg}</div></div>`;
+            input.value = "";
+            box.scrollTop = box.scrollHeight;
+
+            const res = await fetch('/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: msg, career: currentCareer})
+            });
+            const data = await res.json();
+
+            box.innerHTML += `<div class="flex justify-start"><div class="bg-white border text-slate-700 p-3 rounded-lg text-sm shadow-sm max-w-[90%] markdown-body">${marked.parse(data.reply)}</div></div>`;
+            box.scrollTop = box.scrollHeight;
+        }
+
+        document.getElementById('chatInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') sendChat(); });
+    </script>
+</body>
+</html>
